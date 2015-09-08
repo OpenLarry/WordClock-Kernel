@@ -67,6 +67,37 @@
 				pinctrl-0 = <&spi2_pins_a>;
 				status = "okay";
 			};
+
+			lcdif@80030000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&lcdif_16bit_pins_a>;
+				display = <&display>;
+				status = "okay";
+
+				display: display {
+					bits-per-pixel = <16>;
+					bus-width = <16>;
+
+					display-timings {
+						native-mode = <&timing0>;
+						timing0: timing0 {
+							clock-frequency = <4800000>;
+							hactive = <142>;
+							vactive = <120>; /* Less vactive means less leds, but higher frame rate. */
+							hback-porch = <0>; /* can be 0 */
+							hfront-porch = <1>; /* canNOT be 0 */
+							vback-porch = <1>;
+							vfront-porch = <1>;
+							hsync-len = <1>; /* Can be 0, but imx does weird things that way... */
+							vsync-len = <1>;
+							hsync-active = <0>;
+							vsync-active = <0>;
+							de-active = <1>;
+							pixelclk-active = <0>;
+						};
+					};
+				};
+			};
 		};
 
 		apbx@80040000 {

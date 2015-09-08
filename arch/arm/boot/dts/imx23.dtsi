@@ -296,6 +296,35 @@
 					fsl,pull-up = <MXS_PULL_DISABLE>;
 				};
 
+				lcdif_16bit_pins_a: lcdif-16bit@0 {
+					reg = <0>;
+					fsl,pinmux-ids = <
+						MX23_PAD_LCD_D00__LCD_D00
+						MX23_PAD_LCD_D01__LCD_D01
+						MX23_PAD_LCD_D02__LCD_D02
+						MX23_PAD_LCD_D03__LCD_D03
+						MX23_PAD_LCD_D04__LCD_D04
+						MX23_PAD_LCD_D05__LCD_D05
+						MX23_PAD_LCD_D06__LCD_D06
+						MX23_PAD_LCD_D07__LCD_D07
+						MX23_PAD_LCD_D08__LCD_D08
+						MX23_PAD_LCD_D09__LCD_D09
+						MX23_PAD_LCD_D10__LCD_D10
+						MX23_PAD_LCD_D11__LCD_D11
+						MX23_PAD_LCD_D12__LCD_D12
+						MX23_PAD_LCD_D13__LCD_D13
+						MX23_PAD_LCD_D14__LCD_D14
+						MX23_PAD_LCD_D15__LCD_D15
+						MX23_PAD_LCD_DOTCK__LCD_DOTCK
+						MX23_PAD_LCD_ENABLE__LCD_ENABLE
+						MX23_PAD_LCD_HSYNC__LCD_HSYNC
+						MX23_PAD_LCD_VSYNC__LCD_VSYNC
+					>;
+					fsl,drive-strength = <MXS_DRIVE_8mA>;
+					fsl,voltage = <MXS_VOLTAGE_HIGH>;
+					fsl,pull-up = <MXS_PULL_DISABLE>;
+				};
+
 				spi2_pins_a: spi2@0 {
 					reg = <0>;
 					fsl,pinmux-ids = <
