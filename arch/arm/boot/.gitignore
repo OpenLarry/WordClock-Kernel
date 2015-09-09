@@ -1,5 +1,6 @@
 Image
 zImage
+zImage_dtb
 xipImage
 bootpImage
 uImage
