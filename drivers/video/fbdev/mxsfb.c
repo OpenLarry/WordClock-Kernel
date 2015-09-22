@@ -804,7 +804,9 @@ static int mxsfb_init_fbinfo(struct mxsfb_info *host,
 	struct fb_var_screeninfo *var = &fb_info->var;
 	dma_addr_t fb_phys;
 	void *fb_virt;
+	int *fb_virt_int;
 	unsigned fb_size;
+	int i,j;
 
 	fb_info->fbops = &mxsfb_ops;
 	fb_info->flags = FBINFO_FLAG_DEFAULT | FBINFO_READS_FAST;
@@ -834,9 +836,23 @@ static int mxsfb_init_fbinfo(struct mxsfb_info *host,
 	fb_info->fix.smem_start = fb_phys;
 	fb_info->screen_base = fb_virt;
 	fb_info->screen_size = fb_info->fix.smem_len = fb_size;
+	
+	fb_virt_int = fb_virt;
 
-	if (mxsfb_restore_mode(host, vmode))
+	if (mxsfb_restore_mode(host, vmode)) {
 		memset(fb_virt, 0, fb_size);
+		
+		j=0;
+		for(i=0;i<fb_size/sizeof(int);i+=3) {
+			fb_virt_int[i] = 0xFFFFFFFF;
+			if(++j%8==0) fb_virt_int[i+1] = 0xFFFFFFFF;
+			
+			if(j == 24) {
+				j=0;
+				i--;
+			}
+		}
+	}
 
 	return 0;
 }
