@@ -89,7 +89,7 @@
 							vback-porch = <1>;
 							vfront-porch = <1>;
 							hsync-len = <1>; /* Can be 0, but imx does weird things that way... */
-							vsync-len = <1>;
+							vsync-len = <544>;
 							hsync-active = <0>;
 							vsync-active = <0>;
 							de-active = <1>;
@@ -109,6 +109,13 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&duart_pins_a>;
 				status = "okay";
+			};
+			
+			pwm: pwm@80064000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&pwm2_pins_a>;
+				status = "okay";
+				fsl,drive-strength = <MXS_DRIVE_8mA>;
 			};
 
 			auart0: serial@8006c000 {
