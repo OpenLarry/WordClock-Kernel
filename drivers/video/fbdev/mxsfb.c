@@ -47,6 +47,8 @@
 #include <linux/dma-mapping.h>
 #include <linux/io.h>
 #include <linux/fb.h>
+#include <linux/interrupt.h>
+#include <linux/wait.h>
 #include <linux/regulator/consumer.h>
 #include <video/of_display_timing.h>
 #include <video/of_videomode.h>
@@ -99,6 +101,10 @@
 #define CTRL1_FIFO_CLEAR		(1 << 21)
 #define CTRL1_SET_BYTE_PACKAGING(x)	(((x) & 0xf) << 16)
 #define CTRL1_GET_BYTE_PACKAGING(x)	(((x) >> 16) & 0xf)
+#define CTRL1_VSYNC_EDGE_IRQ_EN	(1 << 12)
+#define CTRL1_VSYNC_EDGE_IRQ	(1 << 8)
+#define CTRL1_CUR_FRAME_DONE_IRQ_EN	(1 << 13)
+#define CTRL1_CUR_FRAME_DONE_IRQ	(1 << 9)
 
 #define TRANSFER_COUNT_SET_VCOUNT(x)	(((x) & 0xffff) << 16)
 #define TRANSFER_COUNT_GET_VCOUNT(x)	(((x) >> 16) & 0xffff)
@@ -182,6 +188,9 @@ struct mxsfb_info {
 	const struct mxsfb_devdata *devdata;
 	u32 sync;
 	struct regulator *reg_lcd;
+	wait_queue_head_t wait;
+	unsigned int vsync_count;
+	int irq;
 };
 
 #define mxsfb_is_v3(host) (host->devdata->ipversion == 3)
@@ -277,9 +286,11 @@ static int mxsfb_check_var(struct fb_var_screeninfo *var,
 	if (var->yres < MIN_YRES)
 		var->yres = MIN_YRES;
 
+	
 	var->xres_virtual = var->xres;
-
+	/* why?
 	var->yres_virtual = var->yres;
+	*/
 
 	switch (var->bits_per_pixel) {
 	case 16:
@@ -530,6 +541,39 @@ static int mxsfb_set_par(struct fb_info *fb_info)
 	return 0;
 }
 
+static int mxsfb_ioctl(struct fb_info *fb_info, unsigned int cmd,
+		       unsigned long arg)
+{
+	struct mxsfb_info *host = to_imxfb_host(fb_info);
+	int retval = -EFAULT;
+	
+	switch (cmd) {
+	case FBIO_WAITFORVSYNC:
+		{
+			unsigned int count;
+			
+			writel(CTRL1_CUR_FRAME_DONE_IRQ_EN, host->base + LCDC_CTRL1 + REG_SET);
+			
+			count = host->vsync_count;
+			retval = wait_event_interruptible_timeout(host->wait,
+				count != host->vsync_count, HZ / 10);
+			
+			if (retval == 0)
+				return -ETIMEDOUT;
+			if (retval > 0)
+				return 0;
+			
+			break;
+		}
+		
+	default:
+		retval = -ENOIOCTLCMD;
+		break;
+	}
+	
+	return retval;
+}
+
 static int mxsfb_setcolreg(u_int regno, u_int red, u_int green, u_int blue,
 		u_int transp, struct fb_info *fb_info)
 {
@@ -623,6 +667,8 @@ static struct fb_ops mxsfb_ops = {
 	.fb_fillrect = cfb_fillrect,
 	.fb_copyarea = cfb_copyarea,
 	.fb_imageblit = cfb_imageblit,
+	.fb_ioctl = mxsfb_ioctl,
+	.fb_compat_ioctl = mxsfb_ioctl,
 };
 
 static int mxsfb_restore_mode(struct mxsfb_info *host,
@@ -894,6 +940,21 @@ static const struct of_device_id mxsfb_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, mxsfb_dt_ids);
 
+
+static irqreturn_t mxsfb_handle_irq(int irq, void *dev_id)
+{
+	struct mxsfb_info *host = dev_id;
+	
+	if (readl(host->base + LCDC_CTRL1) & CTRL1_CUR_FRAME_DONE_IRQ) {
+		writel(CTRL1_CUR_FRAME_DONE_IRQ, host->base + LCDC_CTRL1 + REG_CLR);
+		
+		host->vsync_count++;
+		wake_up_interruptible(&host->wait);
+	}
+	
+	return IRQ_HANDLED;
+}
+
 static int mxsfb_probe(struct platform_device *pdev)
 {
 	const struct of_device_id *of_id =
@@ -960,6 +1021,24 @@ static int mxsfb_probe(struct platform_device *pdev)
 	ret = mxsfb_init_fbinfo(host, mode);
 	if (ret != 0)
 		goto fb_release;
+	
+	
+	host->irq = platform_get_irq(pdev, 0);
+	if (host->irq < 0) {
+		dev_err(&pdev->dev, "no IRQ defined\n");
+		ret = -ENODEV;
+		goto fb_release;
+	}
+
+	ret = request_irq(host->irq, mxsfb_handle_irq, 0, "LCD", host);
+	if (ret) {
+		dev_err(&pdev->dev, "request_irq failed: %d\n", ret);
+		ret = -EBUSY;
+		goto fb_release;
+	}
+	
+	init_waitqueue_head(&host->wait);
+	
 
 	fb_videomode_to_var(&fb_info->var, mode);
 
@@ -989,6 +1068,7 @@ static int mxsfb_probe(struct platform_device *pdev)
 fb_destroy:
 	if (host->enabled)
 		clk_disable_unprepare(host->clk);
+	free_irq(host->irq, host);
 fb_release:
 	framebuffer_release(fb_info);
 
@@ -1005,6 +1085,9 @@ static int mxsfb_remove(struct platform_device *pdev)
 
 	unregister_framebuffer(fb_info);
 	mxsfb_free_videomem(host);
+	
+	writel(CTRL1_CUR_FRAME_DONE_IRQ_EN, host->base + LCDC_CTRL1 + REG_CLR);
+	free_irq(host->irq, host);
 
 	framebuffer_release(fb_info);
 
