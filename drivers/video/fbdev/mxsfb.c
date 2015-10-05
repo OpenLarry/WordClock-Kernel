@@ -845,14 +845,21 @@ static int mxsfb_init_fbinfo(struct mxsfb_info *host,
 	if (mxsfb_restore_mode(host, vmode)) {
 		memset(fb_virt, 0, fb_size);
 		
+		// boot logo
 		j=0;
-		for(i=0;i<fb_size/sizeof(int);i+=3) {
-			fb_virt_int[i] = 0xFFFFFFFF;
-			if(++j%8==0) fb_virt_int[i+1] = 0xFFFFFFFF;
-			
-			if(j == 24) {
-				j=0;
-				i--;
+		for(i=0;i<120;i++) {
+			for(j=0;j<24;j++) {
+				fb_virt_int[i*71+j*3] = 0xFFFFFFFF;
+				if(j%8==7) fb_virt_int[i*71+j*3+1] = 0xFFFFFFFF;
+				
+				if(i == 7 || i == 8 || i == 9 || i == 10 || i == 16 || i == 21 || i == 25 || i == 32 || i == 34 || i == 38 || i == 43 || i == 44 || i == 49 || i == 53)
+					fb_virt_int[i*71+j*3+1] |= 0x00010001 << 4;
+				
+				if(i == 30 || i == 39 || i == 40 || i == 49 || i == 50 || i == 52 || i == 53 || i == 54 || i == 55 || i == 59)
+					fb_virt_int[i*71+j*3+1] |= 0x00010001 << 5;
+				
+				if(i == 33 || i == 34 || i == 35 || i == 36 || i == 42 || i == 47 || i == 51 || i == 58)
+					fb_virt_int[i*71+j*3+1] |= 0x00010001 << 6;
 			}
 		}
 	}
