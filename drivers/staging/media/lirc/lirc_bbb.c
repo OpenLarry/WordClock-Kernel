@@ -60,7 +60,7 @@
 /* set the default GPIO input pin */
 static int gpio_in_pin = 16;
 /* set the default GPIO output pin */
-static int gpio_out_pin = 91;
+static int gpio_out_pin = 4;
 /* enable debugging messages */
 static int debug;
 /* -1 = auto, 0 = active high, 1 = active low */
