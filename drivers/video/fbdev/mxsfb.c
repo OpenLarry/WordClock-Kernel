@@ -556,7 +556,7 @@ static int mxsfb_ioctl(struct fb_info *fb_info, unsigned int cmd,
 			
 			count = host->vsync_count;
 			retval = wait_event_interruptible_timeout(host->wait,
-				count != host->vsync_count, HZ / 10);
+				count != host->vsync_count, HZ);
 			
 			if (retval == 0)
 				return -ETIMEDOUT;
