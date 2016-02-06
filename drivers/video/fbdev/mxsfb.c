@@ -898,6 +898,8 @@ static int mxsfb_init_fbinfo(struct mxsfb_info *host,
 				fb_virt_int[i*71+j*3] = 0xFFFFFFFF;
 				if(j%8==7) fb_virt_int[i*71+j*3+1] = 0xFFFFFFFF;
 				
+				if(j%8==0) continue;
+				
 				if(i == 7 || i == 8 || i == 9 || i == 10 || i == 16 || i == 21 || i == 25 || i == 32 || i == 34 || i == 38 || i == 43 || i == 44 || i == 49 || i == 53)
 					fb_virt_int[i*71+j*3+1] |= 0x00010001 << 4;
 				
