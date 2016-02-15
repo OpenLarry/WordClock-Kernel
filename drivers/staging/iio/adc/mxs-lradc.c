@@ -1422,10 +1422,16 @@ static const struct iio_chan_spec mx23_lradc_chan_spec[] = {
 	},
 	/* Hidden channel to keep indexes */
 	{
-		.type = IIO_TEMP,
+		.type = IIO_VOLTAGE,
 		.indexed = 1,
-		.scan_index = -1,
+		.scan_index = 9,
 		.channel = 9,
+		.address = 9,
+		.scan_type = {
+			.sign = 'u',
+			.realbits = LRADC_RESOLUTION,
+			.storagebits = 32,
+		}
 	},
 	MXS_ADC_CHAN(10, IIO_VOLTAGE, NULL),
 	MXS_ADC_CHAN(11, IIO_VOLTAGE, NULL),
@@ -1458,10 +1464,16 @@ static const struct iio_chan_spec mx28_lradc_chan_spec[] = {
 	},
 	/* Hidden channel to keep indexes */
 	{
-		.type = IIO_TEMP,
+		.type = IIO_VOLTAGE,
 		.indexed = 1,
-		.scan_index = -1,
+		.scan_index = 9,
 		.channel = 9,
+		.address = 9,
+		.scan_type = {
+			.sign = 'u',
+			.realbits = LRADC_RESOLUTION,
+			.storagebits = 32,
+		}
 	},
 	MXS_ADC_CHAN(10, IIO_VOLTAGE, "VDDIO"),
 	MXS_ADC_CHAN(11, IIO_VOLTAGE, "VTH"),
