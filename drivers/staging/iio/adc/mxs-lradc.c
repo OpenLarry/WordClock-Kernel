@@ -303,7 +303,7 @@ struct mxs_lradc {
 #define	LRADC_CTRL1_LRADC_IRQ_OFFSET		0
 
 #define	LRADC_CTRL2				0x20
-#define	LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET	24
+#define	LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(x)	(24 + x)
 #define	LRADC_CTRL2_TEMPSENSE_PWD		BIT(15)
 
 #define	LRADC_STATUS				0x40
@@ -845,11 +845,11 @@ static int mxs_lradc_read_single(struct iio_dev *iio_dev, int chan, int *val)
 	/* Enable / disable the divider per requirement */
 	if (test_bit(chan, &lradc->is_divided))
 		mxs_lradc_reg_set(lradc,
-				  1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET,
+				  1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(0),
 				  LRADC_CTRL2);
 	else
 		mxs_lradc_reg_clear(lradc,
-				    1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET,
+				    1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(0),
 				    LRADC_CTRL2);
 
 	/* Clean the slot's previous content, then set new one. */
@@ -1264,6 +1264,8 @@ static int mxs_lradc_buffer_preenable(struct iio_dev *iio)
 	struct mxs_lradc *lradc = iio_priv(iio);
 	int ret = 0, chan, ofs = 0;
 	unsigned long enable = 0;
+	u32 ctrl2_set = 0;
+	u32 ctrl2_clr = 0;
 	u32 ctrl4_set = 0;
 	u32 ctrl4_clr = 0;
 	u32 ctrl1_irq = 0;
@@ -1300,6 +1302,13 @@ static int mxs_lradc_buffer_preenable(struct iio_dev *iio)
 		ctrl4_set |= chan << LRADC_CTRL4_LRADCSELECT_OFFSET(ofs);
 		ctrl4_clr |= LRADC_CTRL4_LRADCSELECT_MASK(ofs);
 		ctrl1_irq |= LRADC_CTRL1_LRADC_IRQ_EN(ofs);
+		
+		/* Enable / disable the divider per requirement */
+		if (test_bit(chan, &lradc->is_divided))
+			ctrl2_set |= 1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(ofs);
+		else
+			ctrl2_clr |= 1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(ofs);
+		
 		mxs_lradc_reg_wrt(lradc, chan_value, LRADC_CH(ofs));
 		bitmap_set(&enable, ofs, 1);
 		ofs++;
@@ -1307,6 +1316,8 @@ static int mxs_lradc_buffer_preenable(struct iio_dev *iio)
 
 	mxs_lradc_reg_clear(lradc, LRADC_DELAY_TRIGGER_LRADCS_MASK |
 			    LRADC_DELAY_KICK, LRADC_DELAY(0));
+	mxs_lradc_reg_clear(lradc, ctrl2_clr, LRADC_CTRL2);
+	mxs_lradc_reg_set(lradc, ctrl2_set, LRADC_CTRL2);
 	mxs_lradc_reg_clear(lradc, ctrl4_clr, LRADC_CTRL4);
 	mxs_lradc_reg_set(lradc, ctrl4_set, LRADC_CTRL4);
 	mxs_lradc_reg_set(lradc, ctrl1_irq, LRADC_CTRL1);
