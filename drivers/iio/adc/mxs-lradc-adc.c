@@ -48,6 +48,7 @@
 
 #define VREF_MV_BASE 1850
 
+
 static const char *mx23_lradc_adc_irq_names[] = {
 	"mxs-lradc-channel0",
 	"mxs-lradc-channel1",
@@ -167,10 +168,10 @@ static int mxs_lradc_adc_read_single(struct iio_dev *iio_dev, int chan,
 
 	/* Enable / disable the divider per requirement */
 	if (test_bit(chan, &adc->is_divided))
-		writel(1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET,
+		writel(1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(0),
 		       adc->base + LRADC_CTRL2 + STMP_OFFSET_REG_SET);
 	else
-		writel(1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET,
+		writel(1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(0),
 		       adc->base + LRADC_CTRL2 + STMP_OFFSET_REG_CLR);
 
 	/* Clean the slot's previous content, then set new one. */
@@ -359,6 +360,7 @@ static SHOW_SCALE_AVAILABLE_ATTR(13);
 static SHOW_SCALE_AVAILABLE_ATTR(14);
 static SHOW_SCALE_AVAILABLE_ATTR(15);
 
+
 static struct attribute *mxs_lradc_adc_attributes[] = {
 	&iio_dev_attr_in_voltage0_scale_available.dev_attr.attr,
 	&iio_dev_attr_in_voltage1_scale_available.dev_attr.attr,
@@ -492,6 +494,8 @@ static int mxs_lradc_adc_buffer_preenable(struct iio_dev *iio)
 	struct mxs_lradc *lradc = adc->lradc;
 	int chan, ofs = 0;
 	unsigned long enable = 0;
+	u32 ctrl2_set = 0;
+	u32 ctrl2_clr = 0;
 	u32 ctrl4_set = 0;
 	u32 ctrl4_clr = 0;
 	u32 ctrl1_irq = 0;
@@ -509,12 +513,22 @@ static int mxs_lradc_adc_buffer_preenable(struct iio_dev *iio)
 		ctrl4_clr |= LRADC_CTRL4_LRADCSELECT_MASK(ofs);
 		ctrl1_irq |= LRADC_CTRL1_LRADC_IRQ_EN(ofs);
 		writel(chan_value, adc->base + LRADC_CH(ofs));
+
+
+		/* Enable / disable the divider per requirement */
+		if (test_bit(chan, &adc->is_divided))
+			ctrl2_set |= 1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(ofs);
+		else
+			ctrl2_clr |= 1 << LRADC_CTRL2_DIVIDE_BY_TWO_OFFSET(ofs);
+
 		bitmap_set(&enable, ofs, 1);
 		ofs++;
 	}
 
 	writel(LRADC_DELAY_TRIGGER_LRADCS_MASK | LRADC_DELAY_KICK,
 	       adc->base + LRADC_DELAY(0) + STMP_OFFSET_REG_CLR);
+	writel(ctrl2_clr, adc->base + LRADC_CTRL2 + STMP_OFFSET_REG_CLR);
+	writel(ctrl2_set, adc->base + LRADC_CTRL2 + STMP_OFFSET_REG_SET);
 	writel(ctrl4_clr, adc->base + LRADC_CTRL4 + STMP_OFFSET_REG_CLR);
 	writel(ctrl4_set, adc->base + LRADC_CTRL4 + STMP_OFFSET_REG_SET);
 	writel(ctrl1_irq, adc->base + LRADC_CTRL1 + STMP_OFFSET_REG_SET);
