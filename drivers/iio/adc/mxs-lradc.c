@@ -201,7 +201,8 @@ struct mxs_lradc {
 	u32			*buffer;
 	struct iio_trigger	*trig;
 
-	struct mutex		lock;
+	struct mutex		lock_mutex;
+  bool lock;
 
 	struct completion	completion;
 
@@ -832,9 +833,14 @@ static int mxs_lradc_read_single(struct iio_dev *iio_dev, int chan, int *val)
 	 * the same time, yet the code becomes horribly complicated. Therefore I
 	 * applied KISS principle here.
 	 */
-	ret = mutex_trylock(&lradc->lock);
-	if (!ret)
+	mutex_lock(&lradc->lock_mutex);
+	if (lradc->lock) {
+    mutex_unlock(&lradc->lock_mutex);
 		return -EBUSY;
+  }else{
+    lradc->lock = true;
+    mutex_unlock(&lradc->lock_mutex);
+  }
 
 	reinit_completion(&lradc->completion);
 
@@ -882,8 +888,8 @@ static int mxs_lradc_read_single(struct iio_dev *iio_dev, int chan, int *val)
 
 err:
 	mxs_lradc_reg_clear(lradc, LRADC_CTRL1_LRADC_IRQ_EN(0), LRADC_CTRL1);
-
-	mutex_unlock(&lradc->lock);
+  
+  lradc->lock = false;
 
 	return ret;
 }
@@ -966,9 +972,14 @@ static int mxs_lradc_write_raw(struct iio_dev *iio_dev,
 			lradc->scale_avail[chan->channel];
 	int ret;
 
-	ret = mutex_trylock(&lradc->lock);
-	if (!ret)
+	mutex_lock(&lradc->lock_mutex);
+	if (lradc->lock) {
+    mutex_unlock(&lradc->lock_mutex);
 		return -EBUSY;
+  }else{
+    lradc->lock = true;
+    mutex_unlock(&lradc->lock_mutex);
+  }
 
 	switch (m) {
 	case IIO_CHAN_INFO_SCALE:
@@ -991,7 +1002,7 @@ static int mxs_lradc_write_raw(struct iio_dev *iio_dev,
 		break;
 	}
 
-	mutex_unlock(&lradc->lock);
+  lradc->lock = false;
 
 	return ret;
 }
@@ -1276,9 +1287,14 @@ static int mxs_lradc_buffer_preenable(struct iio_dev *iio)
 	 * Lock the driver so raw access can not be done during buffered
 	 * operation. This simplifies the code a lot.
 	 */
-	ret = mutex_trylock(&lradc->lock);
-	if (!ret)
+	mutex_lock(&lradc->lock_mutex);
+	if (lradc->lock) {
+    mutex_unlock(&lradc->lock_mutex);
 		return -EBUSY;
+  }else{
+    lradc->lock = true;
+    mutex_unlock(&lradc->lock_mutex);
+  }
 
 	lradc->buffer = kmalloc_array(len, sizeof(*lradc->buffer), GFP_KERNEL);
 	if (!lradc->buffer) {
@@ -1322,7 +1338,7 @@ static int mxs_lradc_buffer_preenable(struct iio_dev *iio)
 	return 0;
 
 err_mem:
-	mutex_unlock(&lradc->lock);
+	lradc->lock = false;
 	return ret;
 }
 
@@ -1341,7 +1357,7 @@ static int mxs_lradc_buffer_postdisable(struct iio_dev *iio)
 			LRADC_CTRL1);
 
 	kfree(lradc->buffer);
-	mutex_unlock(&lradc->lock);
+	lradc->lock = false;
 
 	return 0;
 }
@@ -1661,7 +1677,7 @@ static int mxs_lradc_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, iio);
 
 	init_completion(&lradc->completion);
-	mutex_init(&lradc->lock);
+	mutex_init(&lradc->lock_mutex);
 
 	iio->name = pdev->name;
 	iio->dev.parent = &pdev->dev;
