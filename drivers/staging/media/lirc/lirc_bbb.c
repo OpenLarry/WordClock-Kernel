@@ -64,7 +64,7 @@ static int gpio_out_pin = 4;
 /* enable debugging messages */
 static int debug;
 /* -1 = auto, 0 = active high, 1 = active low */
-static int sense = -1;
+static int sense = 1; // wordclock's receiver is always active low!
 /* use softcarrier by default */
 static int softcarrier = 1;
 
@@ -269,7 +269,10 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 				 * detecting pulse while this
 				 * MUST be a space!
 				 */
-				sense = sense ? 0 : 1;
+				
+				// causes problems, because ir fires two high interrupts sometimes
+				// maybe pull down resistor value of imx233's gpio gatekeeper is too large?
+				// sense = sense ? 0 : 1;
 			}
 		} else {
 			data = (int) (deltv*1000000 +
