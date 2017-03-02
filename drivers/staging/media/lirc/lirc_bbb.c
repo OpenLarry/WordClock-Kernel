@@ -62,11 +62,11 @@ static int gpio_in_pin = 16;
 /* set the default GPIO output pin */
 static int gpio_out_pin = 4;
 /* enable debugging messages */
-static int debug;
+static bool debug;
 /* -1 = auto, 0 = active high, 1 = active low */
-static int sense = 1; // wordclock's receiver is always active low!
+static bool sense = 1; // wordclock's receiver is always active low!
 /* use softcarrier by default */
-static int softcarrier = 1;
+static bool softcarrier = 1;
 
 /*struct gpio_chip *gpiochip;
 struct irq_chip *irqchip;
@@ -285,24 +285,24 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 
 	return IRQ_HANDLED;
 }
-
+/*
 static int is_right_chip(struct gpio_chip *chip, void *data)
 {
+	int *pin_wanted = (int *)data;
+	
 	if (!data)
 		return 0;
-
-	int *pin_wanted = (int *)data;
-
+	
 	dprintk("is_right_chip %s %d\n", chip->label, (*pin_wanted >= chip->base && *pin_wanted < (chip->base + chip->ngpio)));
 
 	if (*pin_wanted >= chip->base && *pin_wanted < (chip->base + chip->ngpio))
 		return 1;
 	return 0;
 }
-
+*/
 static int init_port(void)
 {
-	int i, nlow, nhigh, ret, irq;
+	int i, nlow, nhigh, ret/*, irq*/;
 
 	/*
 	gpiochip = gpiochip_find(&gpio_in_pin, is_right_chip);
@@ -378,10 +378,10 @@ static int init_port(void)
 	}
 
 	return 0;
-
+	/*
 	exit_gpio_free_in_pin:
 	gpio_free(gpio_in_pin);
-
+	*/
 	exit_gpio_free_out_pin:
 	gpio_free(gpio_out_pin);
 
@@ -620,7 +620,7 @@ static void lirc_bbb_exit(void)
 
 static int __init lirc_bbb_init_module(void)
 {
-	int result, i;
+	int result/*, i*/;
 
 	result = lirc_bbb_init();
 	if (result)
