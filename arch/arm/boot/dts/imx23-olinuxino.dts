@@ -57,6 +57,16 @@
 					fsl,voltage = <MXS_VOLTAGE_HIGH>;
 					fsl,pull-up = <MXS_PULL_DISABLE>;
 				};
+
+				ir_pin_gpio0_16: ir_gpio0_16@0 {
+					reg = <0>;
+					fsl,pinmux-ids = <
+						MX23_PAD_GPMI_CLE__GPIO_0_16
+					>;
+					fsl,drive-strength = <MXS_DRIVE_4mA>;
+					fsl,voltage = <MXS_VOLTAGE_HIGH>;
+					fsl,pull-up = <MXS_PULL_DISABLE>;
+				};
 			};
 
 			ssp1: ssp@80034000 {
@@ -164,5 +174,12 @@
 			label = "green";
 			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	ir_recv: gpio-ir-receiver {
+		compatible = "gpio-ir-receiver";
+		gpios = <&gpio0 16 1>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&ir_pin_gpio0_16>;
 	};
 };
