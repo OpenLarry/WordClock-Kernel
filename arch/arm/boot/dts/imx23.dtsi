@@ -252,7 +252,6 @@
 						MX23_PAD_GPMI_D10__SSP1_DATA6
 						MX23_PAD_GPMI_D11__SSP1_DATA7
 						MX23_PAD_SSP1_CMD__SSP1_CMD
-						MX23_PAD_SSP1_DETECT__SSP1_DETECT
 						MX23_PAD_SSP1_SCK__SSP1_SCK
 					>;
 					fsl,drive-strength = <MXS_DRIVE_8mA>;
@@ -263,7 +262,6 @@
 				mmc0_pins_fixup: mmc0-pins-fixup@0 {
 					reg = <0>;
 					fsl,pinmux-ids = <
-						MX23_PAD_SSP1_DETECT__SSP1_DETECT
 						MX23_PAD_SSP1_SCK__SSP1_SCK
 					>;
 					fsl,pull-up = <MXS_PULL_DISABLE>;
