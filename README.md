@@ -1,5 +1,14 @@
-Linux kernel
-============
+# WordClock Kernel
+
+This is the WordClock Linux kernel, which is build using the [WordClock Buildroot](https://github.com/OpenLarry/WordClock-Buildroot) image generator.
+
+## Changes
+
+* Adjusted device tree in order to drive WS2812B LEDs using the LCD controller of the NXP i.MX233 processor (inspired by [SpritesMods](https://spritesmods.com/?art=imx233-ws2811)).
+* Added VSync support to the LCD framebuffer driver.
+* Fixed scale issues with the LRADC IIO driver.
+
+## Linux kernel
 
 There are several guides for kernel developers and users. These guides can
 be rendered in a number of formats, like HTML and PDF. Please read
